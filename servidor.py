@@ -52,6 +52,9 @@ def guardar(paquete):
         estado["invasiones"] = paquete.get("invasiones", estado["invasiones"])
         for invasion, resumen in paquete.get("resumenes", {}).items():
             estado["resumenes"][invasion] = resumen
+        # las invasiones que el PC ya no tiene (borradas al empezar una nueva) se borran aquí también
+        vigentes = {i["id"] for i in estado["invasiones"]}
+        estado["resumenes"] = {k: v for k, v in estado["resumenes"].items() if k in vigentes}
         if estado["invasiones"]:
             estado["ultima"] = estado["invasiones"][0]["id"]
         estado["recibido"] = time.time()

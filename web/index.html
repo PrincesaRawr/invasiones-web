@@ -204,6 +204,7 @@ function pintar() {
     sel.dataset.opciones = opciones;
   }
   if (d.invasion) sel.value = d.invasion;
+  sel.hidden = d.invasiones.length <= 1;
 
   // estado
   const punto = $("punto");
