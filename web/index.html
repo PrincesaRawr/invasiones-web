@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daño de la Invasión</title>
+<style>
+:root {
+  color-scheme: light;
+  --fondo: #f4f4f2;
+  --tarjeta: #fcfcfb;
+  --borde: #e2e1dc;
+  --texto: #0b0b0b;
+  --texto-2: #52514e;
+  --texto-3: #7d7c77;
+  --barra: #2a78d6;
+  --barra-fondo: #e8e7e2;
+  --vida: #1baf7a;
+  --vivo: #008300;
+  --parado: #c98500;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fondo: #111110;
+    --tarjeta: #1a1a19;
+    --borde: #2e2e2c;
+    --texto: #f0efec;
+    --texto-2: #c3c2b7;
+    --texto-3: #8f8e86;
+    --barra: #3987e5;
+    --barra-fondo: #2a2a28;
+    --vida: #199e70;
+    --vivo: #3fbf3f;
+    --parado: #eda100;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fondo: #111110; --tarjeta: #1a1a19; --borde: #2e2e2c; --texto: #f0efec;
+  --texto-2: #c3c2b7; --texto-3: #8f8e86; --barra: #3987e5; --barra-fondo: #2a2a28;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fondo); color: var(--texto);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; overflow-x: hidden; }
+header > * { min-width: 0; max-width: 100%; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+select {
+  font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--borde);
+  background: var(--tarjeta); color: var(--texto); max-width: 100%;
+}
+.estado { font-size: 13px; color: var(--texto-2); display: flex; align-items: center; gap: 6px; }
+.punto { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-3); }
+.punto.vivo { background: var(--vivo); }
+.punto.parado { background: var(--parado); }
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; margin-top: 16px; }
+.vida-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.vida-num { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.vida-barra { height: 14px; background: var(--barra-fondo); border-radius: 7px; overflow: hidden; margin-top: 8px; }
+.vida-barra div { height: 100%; background: var(--vida); border-radius: 7px; transition: width .6s; }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+.cifra { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; }
+.cifra span { display: block; font-size: 12px; color: var(--texto-2); }
+.cifra b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.tabla-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--borde); }
+th { font-size: 12px; font-weight: 600; color: var(--texto-2); }
+th:first-child, td:first-child, .izq { text-align: left; }
+tbody tr:last-child td { border-bottom: 0; }
+.bar-celda { min-width: 140px; }
+.bar { display: flex; align-items: center; gap: 8px; }
+.bar i { display: block; height: 10px; background: var(--barra); border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar small { color: var(--texto-2); font-size: 12px; }
+.secundario { color: var(--texto-2); }
+.dos-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.dos-col .tarjeta { margin-top: 16px; }
+@media (max-width: 760px) { .dos-col { grid-template-columns: minmax(0, 1fr); } }
+.buscar { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); width: 180px; max-width: 100%; }
+.fila-titulo { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.fila-titulo h2 { margin: 0; }
+.nota { font-size: 12px; color: var(--texto-3); margin: 10px 0 0; }
+.vacio { color: var(--texto-2); padding: 24px 0; text-align: center; }
+.critico { font-weight: 600; }
+tr.no-id td { color: var(--texto-2); font-style: italic; border-top: 2px solid var(--borde); }
+tr.no-id .bar i { background: var(--texto-3); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="titulo">Invasión</h1>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div class="estado"><span class="punto" id="punto"></span><span id="estado">Conectando…</span></div>
+      <select id="selector" aria-label="Elegir invasión"></select>
+    </div>
+  </header>
+
+  <section class="tarjeta" id="bloque-vida">
+    <div class="vida-cabecera">
+      <div><span class="secundario">Vida del enemigo</span><div class="vida-num" id="vida">–</div></div>
+      <div class="secundario" id="vida-pct"></div>
+    </div>
+    <div class="vida-barra" role="meter" aria-label="Vida restante" id="vida-barra"><div style="width:0"></div></div>
+  </section>
+
+  <div class="cifras" id="cifras"></div>
+
+  <section class="tarjeta">
+    <div class="fila-titulo">
+      <h2>Daño por persona</h2>
+      <input class="buscar" id="buscar" type="search" placeholder="Buscar jugador…">
+    </div>
+    <div class="tabla-scroll"><table id="tabla-jugadores"></table></div>
+  </section>
+
+  <div class="dos-col">
+    <section class="tarjeta">
+      <h2>Tipos de golpe</h2>
+      <div class="tabla-scroll"><table id="tabla-tipos"></table></div>
+    </section>
+    <section class="tarjeta">
+      <h2>Probabilidad según la vida que queda</h2>
+      <div class="tabla-scroll"><table id="tabla-tramos"></table></div>
+      <p class="nota">Con pocos ataques en un tramo, los porcentajes todavía no son fiables.</p>
+    </section>
+  </div>
+
+  <section class="tarjeta">
+    <h2>Últimos golpes</h2>
+    <div class="tabla-scroll"><table id="tabla-ultimos"></table></div>
+  </section>
+</main>
+
+<script>
+const fmt = n => n == null ? "–" : Number(n).toLocaleString("es-ES");
+const $ = id => document.getElementById(id);
+let elegida = null;
+let datos = null;
+
+function celda(texto, clase) {
+  const td = document.createElement("td");
+  td.textContent = texto;
+  if (clase) td.className = clase;
+  return td;
+}
+
+function tabla(id, cabeceras, filas, clasesCab) {
+  const t = $(id);
+  t.innerHTML = "";
+  const thead = t.createTHead().insertRow();
+  cabeceras.forEach((c, i) => {
+    const th = document.createElement("th");
+    th.textContent = c;
+    if (clasesCab && clasesCab[i]) th.className = clasesCab[i];
+    thead.appendChild(th);
+  });
+  const tbody = t.createTBody();
+  if (!filas.length) {
+    const tr = tbody.insertRow();
+    const td = celda("Todavía no hay datos");
+    td.colSpan = cabeceras.length;
+    td.className = "vacio";
+    tr.appendChild(td);
+  }
+  filas.forEach(f => tbody.appendChild(f));
+}
+
+function barra(valor, maximo, etiqueta, tooltip) {
+  const td = document.createElement("td");
+  td.className = "bar-celda izq";
+  const div = document.createElement("div");
+  div.className = "bar";
+  div.title = tooltip;
+  const i = document.createElement("i");
+  i.style.width = (maximo ? Math.max(2, valor / maximo * 100) : 0) + "px";
+  const s = document.createElement("small");
+  s.textContent = etiqueta;
+  div.append(i, s);
+  td.appendChild(div);
+  return td;
+}
+
+function pintar() {
+  const d = datos;
+  // selector de invasiones
+  const sel = $("selector");
+  const opciones = d.invasiones.map(i => i.id + "|" + i.modo).join(",");
+  if (sel.dataset.opciones !== opciones) {
+    sel.innerHTML = "";
+    d.invasiones.forEach((inv, n) => {
+      const o = document.createElement("option");
+      o.value = inv.id;
+      const [f, h] = inv.id.split(" ");
+      const [a, m, dd] = f.split("-");
+      o.textContent = `${inv.modo} · ${dd}/${m} ${h}${n === 0 ? " (última)" : ""}`;
+      sel.appendChild(o);
+    });
+    sel.dataset.opciones = opciones;
+  }
+  if (d.invasion) sel.value = d.invasion;
+
+  // estado
+  const punto = $("punto");
+  if (d.pc_desconectado && (d.en_directo || !d.invasion)) {
+    // solo en la página pública: el PC que lee Discord no ha enviado nada hace rato
+    punto.className = "punto parado";
+    $("estado").textContent = "El PC que lee Discord no está enviando datos";
+  } else if (d.en_directo && d.segundos_desde_lectura != null && d.segundos_desde_lectura < 20) {
+    punto.className = "punto vivo";
+    $("estado").textContent = "En directo";
+  } else if (d.en_directo) {
+    punto.className = "punto parado";
+    $("estado").textContent = d.segundos_desde_lectura == null
+      ? "No veo la invasión en la pantalla"
+      : `Sin ver la invasión desde hace ${Math.round(d.segundos_desde_lectura / 60)} min`;
+  } else {
+    punto.className = "punto";
+    $("estado").textContent = "Invasión anterior";
+  }
+
+  $("titulo").textContent = d.modo ? `Invasión de ${d.modo}` : "Invasión";
+  document.title = d.modo ? `Invasión ${d.modo} · ${fmt(d.vida)} vida` : "Daño de la Invasión";
+
+  // vida
+  const pct = d.vida_total ? d.vida / d.vida_total * 100 : 0;
+  $("vida").textContent = d.vida_total ? `${fmt(d.vida)} / ${fmt(d.vida_total)}` : "–";
+  $("vida-pct").textContent = d.vida_total ? `${pct.toFixed(1).replace(".", ",")} % restante` : "";
+  $("vida-barra").firstElementChild.style.width = pct + "%";
+  $("vida-barra").setAttribute("aria-valuenow", pct.toFixed(1));
+
+  // cifras
+  const criticos = (d.tipos.find(t => t.tipo === "Golpe critico") || {}).probabilidad;
+  const cifras = [
+    ["Golpes registrados", fmt(d.num_ataques || 0)],
+    ["Daño registrado", fmt(d.dano_registrado || 0)],
+    ["Jugadores", fmt(d.jugadores.length)],
+    ["Daño no identificado", d.no_identificado ? fmt(d.no_identificado.dano) : "–"],
+    ["Daño medio por golpe", d.num_ataques ? fmt(Math.round(d.dano_registrado / d.num_ataques)) : "–"],
+    ["Golpes críticos", criticos != null ? `${String(criticos).replace(".", ",")} %` : "–"],
+  ];
+  $("cifras").innerHTML = "";
+  cifras.forEach(([k, v]) => {
+    const div = document.createElement("div");
+    div.className = "cifra";
+    const s = document.createElement("span"); s.textContent = k;
+    const b = document.createElement("b"); b.textContent = v;
+    div.append(s, b);
+    $("cifras").appendChild(div);
+  });
+
+  // jugadores
+  const tipos = d.nombres_tipos || [];
+  const filtro = $("buscar").value.trim().toLowerCase();
+  const noId = d.no_identificado;
+  const maxDano = Math.max(d.jugadores.length ? d.jugadores[0].dano : 0, noId ? noId.dano : 0);
+  const filasJ = d.jugadores
+    .map((j, i) => ({ j, puesto: i + 1 }))
+    .filter(({ j }) => !filtro || j.nombre.toLowerCase().includes(filtro))
+    .map(({ j, puesto }) => {
+      const tr = document.createElement("tr");
+      tr.append(
+        celda(`${puesto}. ${j.nombre}`),
+        celda(fmt(j.dano)),
+        barra(j.dano, maxDano, `${String(j.porcentaje).replace(".", ",")} %`,
+              `${j.nombre}: ${fmt(j.dano)} de daño (${j.porcentaje} % del total)`),
+        celda(fmt(j.ataques)),
+        celda(fmt(j.medio)),
+        celda(fmt(j.maximo)),
+        ...tipos.map(t => celda(fmt(j.tipos[t] || 0))),
+        celda(j.ultimo, "secundario"),
+      );
+      return tr;
+    });
+  // el daño que no sabemos de quién es va siempre al final, sin puesto
+  if (noId && noId.dano > 0 && (!filtro || "daño no identificado".includes(filtro))) {
+    const tr = document.createElement("tr");
+    tr.className = "no-id";
+    const vacias = 3 + tipos.length + 1;
+    tr.append(
+      celda("Daño no identificado"),
+      celda(fmt(noId.dano)),
+      barra(noId.dano, maxDano, `${String(noId.porcentaje).replace(".", ",")} %`,
+            "Golpes con el nombre ilegible, golpes que no se llegaron a ver y lo que pasó antes de abrir el programa"),
+      ...Array.from({ length: vacias }, () => celda("–")),
+    );
+    tr.title = "Golpes con el nombre ilegible, golpes que no se llegaron a ver y lo que pasó antes de abrir el programa";
+    filasJ.push(tr);
+  }
+  tabla("tabla-jugadores",
+        ["Jugador", "Daño", "% del daño", "Golpes", "Medio", "Máximo", ...tipos, "Último"],
+        filasJ, [null, null, "izq"]);
+
+  // tipos de golpe
+  tabla("tabla-tipos", ["Tipo", "Veces", "Probab.", "Medio", "Mín.", "Máx.", "× normal"],
+    d.tipos.map(t => {
+      const tr = document.createElement("tr");
+      tr.append(celda(t.tipo), celda(fmt(t.veces)), celda(`${String(t.probabilidad).replace(".", ",")} %`),
+                celda(fmt(t.medio)), celda(fmt(t.minimo)), celda(fmt(t.maximo)),
+                celda(t.multiplicador != null ? "×" + String(t.multiplicador).replace(".", ",") : "–"));
+      return tr;
+    }));
+
+  // tramos de vida
+  tabla("tabla-tramos", ["Vida", "Golpes", ...tipos.map(t => "% " + t), "Medio"],
+    d.tramos.map(t => {
+      const tr = document.createElement("tr");
+      tr.append(celda(t.tramo), celda(fmt(t.ataques)),
+                ...tipos.map(n => celda(`${String(t.probabilidades[n]).replace(".", ",")} %`)),
+                celda(fmt(t.medio)));
+      return tr;
+    }));
+
+  // últimos golpes
+  tabla("tabla-ultimos", ["Hora", "Jugador", "Golpe", "Daño", "Vida después"],
+    d.ultimos.map(g => {
+      const tr = document.createElement("tr");
+      tr.append(celda(g.hora, "secundario"), celda(g.jugador, "izq"),
+                celda(g.tipo, "izq" + (g.tipo !== "Ataque normal" ? " critico" : "")),
+                celda(fmt(g.dano)), celda(fmt(g.vida_despues)));
+      return tr;
+    }), [null, "izq", "izq"]);
+}
+
+async function cargar() {
+  try {
+    const r = await fetch("/api/datos" + (elegida ? "?invasion=" + encodeURIComponent(elegida) : ""), { cache: "no-store" });
+    datos = await r.json();
+    pintar();
+  } catch (e) {
+    $("punto").className = "punto parado";
+    $("estado").textContent = "El programa del PC está cerrado";
+  }
+}
+
+$("selector").addEventListener("change", e => {
+  // si eligen la última, seguir siempre la más reciente
+  elegida = e.target.selectedIndex === 0 ? null : e.target.value;
+  cargar();
+});
+$("buscar").addEventListener("input", () => datos && pintar());
+cargar();
+setInterval(cargar, 3000);
+</script>
+</body>
+</html>
